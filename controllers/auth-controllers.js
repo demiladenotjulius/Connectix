@@ -19,13 +19,11 @@ export const registerUser = async (req, res) => {
         .json({ success: false, message: 'Email already exists.' })
     }
     
-   // Validate phone number
     const sanitizedPhone = sanitizePhoneNumber(phoneNumber)
     if (!sanitizedPhone.status) {
       return res.status(400).json({ success: false, message: sanitizedPhone.message })
     }
 
-    // Validate password
     if (!passwordValidator(password)) {
       return res.status(400).json({
         success: false,
