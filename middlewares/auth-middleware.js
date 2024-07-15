@@ -1,6 +1,6 @@
 // Authorise User
-import jwt from 'jsonwebtoken'
-
+const jwt = require('jsonwebtoken')
+// import dotenv from 'dotenv'
 export const verify = (req, res, next) => {
   
     try {

@@ -3,11 +3,12 @@ dotenv.config()
 import express from 'express'
 import { connectToDB } from './database/db.js'
 import { handleErrors } from './middlewares/errorHandler.js'
-import { authRoutes } from './routes/auth-routes.js'
+// import { authRoutes } from './routes/auth-routes.js'
 import helmet from 'helmet'
 import cors from 'cors'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
+import userRouter from './routes/user-routes.js'
 
 const app = express()
 const port = process.env.PORT
@@ -38,7 +39,10 @@ const corsOptions = {
 app.use(cors(corsOptions))
 
 // routes
-app.use('/api/v1/auth', authRoutes)
+// app.use('/api/v1/auth', authRoutes)
+app.use('/api/v1/auth', userRouter)
+
+
 
 // home
 app.get('/', (req, res) => {
