@@ -9,6 +9,8 @@ import cors from 'cors'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
 import userRouter from './routes/user-routes.js'
+import authRouter from './config/authentication/twofactor.js'
+import bodyParser from 'body-parser'
 
 const app = express()
 const port = process.env.PORT
@@ -28,6 +30,7 @@ let limiter = rateLimit({
 app.use('/api', limiter)
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
+app.use(bodyParser.json());
 
 // cors config
 const corsOptions = {
@@ -41,6 +44,8 @@ app.use(cors(corsOptions))
 // routes
 // app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/auth', userRouter)
+app.use('/api/v1/auth', authRouter)
+
 
 
 
