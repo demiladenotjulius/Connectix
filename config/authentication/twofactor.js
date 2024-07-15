@@ -18,7 +18,7 @@ authRouter.post('/enable-2fa', async (req, res) => {
         return res.status(404).json({ error: 'User not found' });
       }
   
-      const newSecret = twofactor.generateSecret({ name: 'MyApp', account: email });
+      const newSecret = twofactor.generateSecret({ name: 'Connectix', account: email });
       user.twoFASecret = newSecret.secret;
       await user.save();
   
