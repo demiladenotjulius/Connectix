@@ -80,6 +80,15 @@ export const loginUser = async (req, res) => {
         .status(401)
         .json({ success: false, message: 'Invalid Password' })
     }
+    if (user.twoFASecret) {
+        // If 2FA is enabled, send a response indicating that 2FA is required
+        return res.status(200).json({
+          success: true,
+          message: '2FA Required',
+          twoFARequired: true,
+        });
+      }
+  
     jwt.sign(
       { id: user._id },
       process.env.SECRET,
