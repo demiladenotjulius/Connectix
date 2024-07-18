@@ -47,6 +47,11 @@ const userSchema = new mongoose.Schema(
     userId: {
       type: String
     },
+    credits: {
+      type: Number,
+      default: 500
+
+    },
     twoFASecret: { type: String },
     products: [
       {
