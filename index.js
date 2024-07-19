@@ -8,8 +8,8 @@ import helmet from 'helmet'
 import cors from 'cors'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
-import userRouter from './routes/user-routes.js'
-import authRouter from './config/authentication/twofactor.js'
+import userRouter from './routes/userRoutes/user-routes.js'
+import authRouter from './controllers/twoFactor/twofactor.js'
 import bodyParser from 'body-parser'
 
 const app = express()
