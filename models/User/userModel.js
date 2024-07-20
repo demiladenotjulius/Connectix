@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Please enter your phone number']
     },
     userId: {
-      type: String
+      type: mongoose.Types.ObjectId
     },
     credits: {
       type: Number,
