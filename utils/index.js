@@ -3,6 +3,10 @@ import nodemailer from 'nodemailer'
 import hbs from 'nodemailer-express-handlebars'
 import multer from 'multer'
 import path from 'path'
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 
 
 // cloudinary setup
@@ -83,47 +87,125 @@ export const sanitizePhoneNumber = (phone) => {
 
 
 // nodemailer setup
+// const createTransporter = () => {
+//   return nodemailer.createTransport({
+//     service: 'gmail',
+//     host: 'smtp.gmail.com',
+//     port: 587,
+//     secure: false,
+//     auth: {
+//       user: process.env.NODEMAILER_MAIL,
+//       pass: process.env.NODEMAILER_PASSWORD
+//     }
+//   })
+// }
+
+// export const sendEmail = async (to, subject, text, template, context) => {
+//   const transporter = createTransporter()
+
+//   const hbsOptions = {
+//     viewEngine: { 
+//       defaultLayout: false
+//     },
+//     viewPath: 'views'
+//   }
+
+//   transporter.use('compile', hbs(hbsOptions))
+
+//   const mailOptions = {
+//     from: {
+//       name: 'New App',
+//       address: process.env.NODEMAILER_MAIL
+//     },
+//     to: Array.isArray(to) ? to.join(', ') : to,
+//     subject: subject,
+//     text: text,
+//     template: template,
+//     context : context
+//   }
+
+//   try {
+//     await transporter.sendMail(mailOptions)
+//     console.log('Email sent successfully')
+//   } catch (error) {
+//     console.error('Error sending email:', error)
+//   }
+// }
+
+
 const createTransporter = () => {
   return nodemailer.createTransport({
     service: 'gmail',
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
     auth: {
       user: process.env.NODEMAILER_MAIL,
-      pass: process.env.NODEMAILER_PASSWORD
-    }
-  })
-}
-
-export const sendEmail = async (to, subject, text, template, context) => {
-  const transporter = createTransporter()
-
-  const hbsOptions = {
-    viewEngine: { 
-      defaultLayout: false
+      pass: process.env.NODEMAILER_PASSWORD,
     },
-    viewPath: 'views'
-  }
+  });
+};
 
-  transporter.use('compile', hbs(hbsOptions))
+export const sendEmail = async (to, subject, text) => {
+  const transporter = createTransporter();
 
   const mailOptions = {
     from: {
-      name: 'New App',
-      address: process.env.NODEMAILER_MAIL
+      name: 'Connectix',
+      address: process.env.NODEMAILER_MAIL,
     },
     to: Array.isArray(to) ? to.join(', ') : to,
     subject: subject,
     text: text,
-    template: template,
-    context : context
-  }
+  };
 
   try {
-    await transporter.sendMail(mailOptions)
-    console.log('Email sent successfully')
+    await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully');
   } catch (error) {
-    console.error('Error sending email:', error)
+    console.error('Error sending email:', error);
   }
-}
+};
+
+const createHtmlTransporter = () => {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.NODEMAILER_MAIL,
+      pass: process.env.NODEMAILER_PASSWORD,
+    },
+  });
+
+  const hbsOptions = {
+    viewEngine: {
+      extName: '.handlebars',
+      partialsDir: path.resolve('./views'),
+      defaultLayout: false,
+    },
+    viewPath: path.resolve('./views'),
+    extName: '.handlebars',
+  };
+
+  transporter.use('compile', hbs(hbsOptions));
+
+  return transporter;
+};
+
+export const sendHtmlEmail = async (to, subject, template, context) => {
+  const transporter = createHtmlTransporter();
+
+  const mailOptions = {
+    from: {
+      name: 'Connectix',
+      address: process.env.NODEMAILER_MAIL,
+    },
+    to: Array.isArray(to) ? to.join(',') : to,
+    subject: subject,
+    template: template,
+    context: context,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('HTML email sent successfully');
+  } catch (error) {
+    console.error('Error sending HTML email:', error);
+  }
+};

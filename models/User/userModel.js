@@ -52,6 +52,13 @@ const userSchema = new mongoose.Schema(
       default: 500
 
     },
+    verified: {
+      type: Boolean,
+      default: false
+    },
+    verificationCode: 
+    { type: String },
+
     twoFASecret: { type: String },
     products: [
       {

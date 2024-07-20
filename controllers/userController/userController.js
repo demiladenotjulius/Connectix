@@ -1,115 +1,139 @@
 import bcrypt from 'bcryptjs'
-import { sanitizePhoneNumber, passwordValidator, cloudinary, sendEmail } from '../../utils/index.js'
+import { sanitizePhoneNumber, passwordValidator, cloudinary, sendHtmlEmail, sendEmail } from '../../utils/index.js'
 import { User } from '../../models/User/userModel.js'
 import { handleErrors } from '../../middlewares/errorHandler.js'
 import { authModel } from '../../models/auth/auth-model.js'
 import jwt from 'jsonwebtoken'
 
 const period = 60 * 60 * 24 * 3
-const baseUrl = 'http://localhost:4500/api/v1/auth'
+const baseUrl = process.env.BASE_URL;
 
 
 export const registerUser = async (req, res) => {
   try {
-    const { firstname, surname, email, password, phoneNumber } = req.body    
+    const { firstname, surname, email, password, phoneNumber } = req.body;
 
-    const existingUser = await User.findOne({ email })
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Email already exists.' })
+      return res.status(400).json({ success: false, message: 'Email already exists.' });
     }
-    
-    const sanitizedPhone = sanitizePhoneNumber(phoneNumber)
+
+    const sanitizedPhone = sanitizePhoneNumber(phoneNumber);
     if (!sanitizedPhone.status) {
-      return res.status(400).json({ success: false, message: sanitizedPhone.message })
+      return res.status(400).json({ success: false, message: sanitizedPhone.message });
     }
 
     if (!passwordValidator(password)) {
       return res.status(400).json({
         success: false,
         message: 'Password must contain at least one lowercase letter, one uppercase letter, one digit, one symbol (@#$%^&*!), and have a minimum length of 8 characters'
-      })
+      });
     }
 
-    const hashPassword = await bcrypt.hash(password, 10)  
+    const hashPassword = await bcrypt.hash(password, 10);
+    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // let imageUrl = User.schema.path('profilePics').defaultValue
-    // if (req.file && req.file.path){
-    //   const uploadRes = await cloudinary.uploader.upload(req.file.path, {
-    //     upload_preset: 'express-mvc-starter'
-    //   })
-  
-    //    imageUrl = uploadRes.secure_url
-    // }
-    
-
-    const newUser = User({
+    const newUser = new User({
       email,
-      firstname, surname,
+      firstname,
+      surname,
       password: hashPassword,
       phoneNumber: sanitizedPhone.phone,
-    //   profilePics: imageUrl
-    }) 
+      verificationCode,
+      verified: false,
+    });
 
-    const subject = 'Welcome to New Comapany'
-    const text = 'Thank you for registering with us!'
-    const template = 'welcomeMessage'    
+    const savedUser = await newUser.save();
 
-    const savedUser = await newUser.save()
-    await sendEmail(email, subject, text, template)
-    res
-      .status(201)
-      .json({ success: true, message: 'Account Created Successfully', savedUser })
+    const subject = 'Email Verification';
+    const text = `Your verification code is: ${verificationCode}`;
+
+    await sendEmail(email, subject, text);
+    res.status(201).json({ success: true, message: 'Account Created Successfully. Please check your email to verify your account.', savedUser });
   } catch (error) {
-    handleErrors(error, res)
+    handleErrors(error, res);
   }
-}
+};
+
+
+export const verifyEmailCode = async (req, res) => {
+  try {
+    const { email, verificationCode } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.verificationCode !== verificationCode) {
+      return res.status(400).json({ success: false, message: 'Invalid verification code' });
+    }
+
+    user.verified = true;
+    user.verificationCode = undefined;
+    await user.save();
+
+    const subject = 'Welcome to our Company';
+    const template = 'welcomeMessage';
+    const context = {
+      firstname: user.firstname,
+    };
+
+    await sendHtmlEmail(email, subject, template, context);
+
+    res.status(200).json({ success: true, message: 'Email verified successfully' });
+  } catch (error) {
+    handleErrors(error, res);
+  }
+};
 
 export const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body
-    const user = await User.findOne({ email })
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'user with the email or password not found' })
+      return res.status(404).json({ success: false, message: 'User with the email or password not found' });
     }
-    const checkPassword = await bcrypt.compare(password, user.password)
+
+    if (!user.verified) {
+      return res.status(403).json({ success: false, message: 'Please verify your email before logging in' });
+    }
+
+    const checkPassword = await bcrypt.compare(password, user.password);
     if (!checkPassword) {
-      return res
-        .status(401)
-        .json({ success: false, message: 'Invalid Password' })
+      return res.status(401).json({ success: false, message: 'Invalid Password' });
     }
+
     if (user.twoFASecret) {
-        // If 2FA is enabled, send a response indicating that 2FA is required
-        return res.status(200).json({
-          success: true,
-          message: '2FA Required',
-          twoFARequired: true,
-        });
-      }
-  
+      return res.status(200).json({
+        success: true,
+        message: '2FA Required',
+        twoFARequired: true,
+      });
+    }
+
     jwt.sign(
       { id: user._id },
       process.env.SECRET,
       { expiresIn: '1hr' },
       async (err, token) => {
         if (err) {
-          throw err
+          throw err;
         }
-        res.cookie('userId', user._id, { maxAge: period, httpOnly: true })
+        res.cookie('userId', user._id, { maxAge: period, httpOnly: true });
         res.status(200).json({
           success: true,
           message: 'User Login Successfully',
           user,
           token
-        })
+        });
       }
-    )
+    );
   } catch (error) {
-    handleErrors(error, res)
+    handleErrors(error, res);
   }
-}
+};
 
 
 export const forgetPassword = async (req, res) => {
