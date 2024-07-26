@@ -11,6 +11,12 @@ import rateLimit from 'express-rate-limit'
 import userRouter from './routes/userRoutes/user-routes.js'
 import authRouter from './controllers/twoFactor/twofactor.js'
 import bodyParser from 'body-parser'
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express()
 const port = process.env.PORT
@@ -31,6 +37,8 @@ app.use('/api', limiter)
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
 
 // cors config
 const corsOptions = {

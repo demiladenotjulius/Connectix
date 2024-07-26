@@ -1,8 +1,9 @@
 import express from 'express';
 import { registerUser, loginUser, forgetPassword, getResetPassword, postResetPassword } from '../../controllers/userController/userController.js';
 import { verifyEmailCode } from '../../controllers/userController/userController.js'
-import { verify } from '../../middlewares/auth-middleware.js'; 
-
+import { verify } from '../../middlewares/auth-middleware.js'
+import { generateEventImage} from '../../controllers/imageaGenerator/imageGenerator.js'
+import path  from 'path'
 const userRouter = express.Router();
 
 userRouter.post('/user-register', registerUser);
@@ -12,8 +13,23 @@ userRouter.get('/reset-password/:id/:token', getResetPassword);
 userRouter.post('/reset-password/:id/:token', postResetPassword);
 userRouter.post('/verify-email-code', verifyEmailCode);
 
-userRouter.get('/protected-route', verify, (req, res) => {
-    res.status(200).json({ success: true, message: 'You are authorized', user: req.user });
-  });
+userRouter.post('/generate-image', async (req, res) => {
+  const { eventName, eventDate } = req.body;
+  if (!eventName || !eventDate) {
+    return res.status(400).json({ success: false, message: 'Event name and date are required' });
+  }
+  try {
+    const imagePath = await generateEventImage(eventName, eventDate);
+    const filename = path.basename(imagePath);
+    res.json({ 
+      success: true, 
+      message: 'Image generated successfully', 
+      imageUrl: `/images/${filename}` 
+    });
+  } catch (error) {
+    console.error('Error in generate-image route:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate image' });
+  }
+});
   
 export default userRouter;
