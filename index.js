@@ -42,9 +42,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // cors config
 const corsOptions = {
-  origin: ['http://localhost:5000'],
+  origin: ['http://localhost:5181'],
   optionsSuccessStatus: 200,
-  credentiasl: true,  
+  credentiasls: true,  
 }
 
 app.use(cors(corsOptions))
@@ -61,10 +61,26 @@ app.use('/api/v1/auth', authRouter)
 app.get('/', (req, res) => {
   res.json({success: true, message: 'Backend Connected Successfully'})
 })
-
+app.get('/test', (req, res) => {
+  try {
+    console.log('Test endpoint hit');
+    res.json({ message: 'Backend is connected!' });
+  } catch (error) {
+    console.error('Error in /test route:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 // error handler
 app.use(handleErrors)
 
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    error: 'Something went wrong', 
+    details: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
 // connect to database
 connectToDB()
 
