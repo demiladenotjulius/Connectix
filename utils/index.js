@@ -143,7 +143,7 @@ const createTransporter = () => {
   });
 };
 
-export const sendEmail = async (to, subject, text) => {
+export const sendEmail = async (to, subject, text, context) => {
   const transporter = createTransporter();
 
   const mailOptions = {
@@ -154,6 +154,7 @@ export const sendEmail = async (to, subject, text) => {
     to: Array.isArray(to) ? to.join(', ') : to,
     subject: subject,
     text: text,
+    context: context
   };
 
   try {

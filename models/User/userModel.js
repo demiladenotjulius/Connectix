@@ -14,15 +14,18 @@ const { Schema } = mongoose
 
 const userSchema = new mongoose.Schema(
   {
-    surname: {
+    name: {
       type: String,
-      required: [true, 'kindly enter your surname']
+      required: [true, 'kindly enter your name']
     },
-    firstname: {
+    username: {
       type: String,
-      required: [true, 'kindly enter your first name']
+      // required: [true, 'kindly enter your username']
     },
-    othername: {
+    gender: {
+      type: String
+    },
+    stagename: {
       type: String
     },
     email: {
@@ -40,10 +43,10 @@ const userSchema = new mongoose.Schema(
     //     'Password must contain at least one lowercase letter, one uppercase letter, one digit, one symbol (@#$%^&*!), and have a minimum length of 8 characters'
     //   ]
     },
-    phoneNumber: {
-      type: Number,
-      required: [true, 'Please enter your phone number']
-    },
+    // phoneNumber: {
+    //   type: Number,
+    //   required: [true, 'Please enter your phone number']
+    // },
     userId: {
       type: mongoose.Types.ObjectId
     },
