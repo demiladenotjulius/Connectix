@@ -1,26 +1,13 @@
 import mongoose from "mongoose";
 const { Schema } = mongoose
 
-// const { isEmail } = require('validator')
-
-// const passwordValidator = value => {
-//   const criteria =
-//     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!]{8,}$/
-//   console.log('Password to Validate:', value)
-//   const isValid = criteria.test(value)
-//   console.log('Password Validation Result:', isValid)
-//   return isValid
-// }
-
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'kindly enter your name']
     },
     username: {
       type: String,
-      // required: [true, 'kindly enter your username']
     },
     gender: {
       type: String
@@ -28,16 +15,20 @@ const userSchema = new mongoose.Schema(
     stagename: {
       type: String
     },
+    musicstyle: {
+      type: String
+    },
+    state: {
+      type: String
+    },
     email: {
       type: String,
       unique: true,
       lowercase: true,
-      required: [true, 'Please enter your email address'],
     //   validate: [isEmail, 'please enter a valid email']
     },
     password: {
       type: String,
-      required: [true, 'Please enter your password'],
     //   validate: [
     //     passwordValidator,
     //     'Password must contain at least one lowercase letter, one uppercase letter, one digit, one symbol (@#$%^&*!), and have a minimum length of 8 characters'
@@ -47,9 +38,6 @@ const userSchema = new mongoose.Schema(
     //   type: Number,
     //   required: [true, 'Please enter your phone number']
     // },
-    userId: {
-      type: mongoose.Types.ObjectId
-    },
     credits: {
       type: Number,
       default: 500

@@ -14,10 +14,108 @@ import jwt from "jsonwebtoken";
 const period = 60 * 60 * 24 * 3;
 const baseUrl = process.env.BASE_URL;
 
-export const registerUser = async (req, res) => {
-  try {
-    const { name, username, email, password } = req.body;
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.SECRET, { expiresIn: '1d' });
+};
+// export const registerUser = async (req, res) => {
+//   try {
+//     const { name, username, email, password } = req.body;
 
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Email already exists." });
+//     }
+
+//     if (!passwordValidator(password)) {
+//       return res.status(400).json({
+//         success: false,
+//         message:
+//           "Password must contain at least one lowercase letter, one uppercase letter, one digit, one symbol (@#$%^&*!), and have a minimum length of 8 characters",
+//       });
+//     }
+
+//     const hashPassword = await bcrypt.hash(password, 10);
+//     const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+//     const newUser = new User({
+//       email,
+//       name,
+//       username,
+//       password: hashPassword,
+//       verificationCode,
+//       verified: false,
+//     });
+
+//     const savedUser = await newUser.save();
+
+//     const subject = "Email Verification";
+//     const text = `Your verification code is: ${verificationCode}`;
+
+//     await sendEmail(email, subject, text);
+
+//     res.status(201).json({
+//       success: true,
+//       message:
+//         "Account Created Successfully. Please check your email to verify your account.",
+//       user: {
+//         id: savedUser._id,
+//         name: savedUser.name,
+//         email: savedUser.email,
+//         username: savedUser.username,
+//         verified: savedUser.verified,
+//         credits: savedUser.credits
+//       },
+//     });
+//   } catch (error) {
+//     handleErrors(error, res);
+//   }
+// };
+
+
+// export const verifyEmailCode = async (req, res) => {
+//   try {
+//     const { email, verificationCode } = req.body;
+
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "User not found" });
+//     }
+
+//     if (user.verificationCode !== verificationCode) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Invalid verification code" });
+//     }
+
+//     user.verified = true;
+//     user.verificationCode = undefined;
+//     await user.save();
+
+//     const subject = "Welcome to our Company";
+//     const template = "welcomeMessage";
+//     const context = {
+//       name: user.name,
+//     };
+
+//     await sendHtmlEmail(email, subject, template, context);
+
+//     res
+//       .status(200)
+//       .json({ success: true, message: "Email verified successfully" });
+//   } catch (error) {
+//     handleErrors(error, res);
+//   }
+// };
+
+// Step 1: Initial Registration with Email Verification
+export const initialRegister = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res
@@ -25,71 +123,119 @@ export const registerUser = async (req, res) => {
         .json({ success: false, message: "Email already exists." });
     }
 
-    // const sanitizedPhone = sanitizePhoneNumber(phoneNumber);
-    // if (!sanitizedPhone.status) {
-    //   return res.status(400).json({ success: false, message: sanitizedPhone.message });
-    // }
-
     if (!passwordValidator(password)) {
       return res.status(400).json({
         success: false,
-        message:
-          "Password must contain at least one lowercase letter, one uppercase letter, one digit, one symbol (@#$%^&*!), and have a minimum length of 8 characters",
+        message: "Password must contain at least one lowercase letter, one uppercase letter, one digit, one symbol (@#$%^&*!), and have a minimum length of 8 characters",
       });
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
     const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
-
+    
     const newUser = new User({
       email,
       name,
-      // surname,
-      username,
       password: hashPassword,
-      // phoneNumber: sanitizedPhone.phone,
       verificationCode,
       verified: false,
+      registrationStep: 1
     });
 
     const savedUser = await newUser.save();
 
     const subject = "Email Verification";
     const text = `Your verification code is: ${verificationCode}`;
-
     await sendEmail(email, subject, text);
-    res
-      .status(201)
-      .json({
-        success: true,
-        message:
-          "Account Created Successfully. Please check your email to verify your account.",
-        savedUser,
-      });
+
+    res.status(201).json({
+      success: true,
+      message: "Initial registration successful. Please verify your email.",
+      userId: savedUser._id
+    });
   } catch (error) {
     handleErrors(error, res);
   }
 };
 
+// Email Verification
 export const verifyEmailCode = async (req, res) => {
   try {
     const { email, verificationCode } = req.body;
-
     const user = await User.findOne({ email });
     if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-
     if (user.verificationCode !== verificationCode) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid verification code" });
     }
-
     user.verified = true;
     user.verificationCode = undefined;
+    user.registrationStep = 2;
+    await user.save();
+
+    const token = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+      userId: user._id,
+      token: token  
+    });
+  } catch (error) {
+    handleErrors(error, res);
+  }
+};
+
+// Step 2: Update Additional Information
+export const updateAdditionalInfo = async (req, res) => {
+  try {
+    const { userId, username, gender, state } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user || !user.verified) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid user or email not verified" });
+    }
+
+    user.username = username;
+    user.gender = gender;
+    user.state = state;
+    user.registrationStep = 3;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Additional information updated successfully",
+      userId: user._id
+    });
+  } catch (error) {
+    handleErrors(error, res);
+  }
+};
+
+// Step 3: Complete Registration
+export const completeRegistration = async (req, res) => {
+  try {
+    const { userId, stagename, musicstyle } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid user or previous steps not completed" });
+    }
+
+    user.stagename = stagename;
+    user.musicstyle = musicstyle;
+    user.registrationStep = 'completed';
+
     await user.save();
 
     const subject = "Welcome to our Company";
@@ -97,12 +243,21 @@ export const verifyEmailCode = async (req, res) => {
     const context = {
       name: user.name,
     };
+    await sendHtmlEmail(user.email, subject, template, context);
 
-    await sendHtmlEmail(email, subject, template, context);
-
-    res
-      .status(200)
-      .json({ success: true, message: "Email verified successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Registration completed successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        stagename: user.stagename,
+        musicstyle: user.musicstyle,
+        verified: user.verified
+      },
+    });
   } catch (error) {
     handleErrors(error, res);
   }
@@ -158,7 +313,13 @@ export const loginUser = async (req, res) => {
         res.status(200).json({
           success: true,
           message: "User Login Successfully",
-          user,
+          user :{
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            username: user.username
+  
+          },
           token,
         });
       }
@@ -286,7 +447,6 @@ export const changePassword = async (req, res) => {
     const userId = decoded.id;
     const { currentPassword, newPassword } = req.body;
 
-    // Check if user exists
     const existingUser = await User.findById(userId);
     if (!existingUser) {
       return res.status(404).json({ success: false, message: "User does not exist." });
@@ -297,7 +457,6 @@ export const changePassword = async (req, res) => {
       return res.status(400).json({ success: false, message: "Incorrect current password." });
     }
 
-    // New password validation
     if (!passwordValidator(newPassword)) {
       return res.status(400).json({
         success: false,

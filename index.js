@@ -42,7 +42,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // cors config
 const corsOptions = {
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5174'],
   optionsSuccessStatus: 200,
   credentiasls: true,  
 }
