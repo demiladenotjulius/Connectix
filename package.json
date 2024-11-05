@@ -5,8 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently -n server -c #32a852 \"nodemon --exec babel-node index.js\"",
+    "start": "concurrently \"nodemon --exec babel-node index.js\"",
     "dev": "concurrently -n server -c #32a852 \"nodemon --exec babel-node index.js\""
   },
   "keywords": [],
